@@ -4,7 +4,7 @@
   "description": "A Node.js tool for syncing stacked pull requests with advanced conflict detection and resolution",
   "main": "src/index.js",
   "bin": {
-    "stacked-pr-sync": "./bin/stacked-pr-sync.js"
+    "stacked-pr-sync": "bin/stacked-pr-sync.js"
   },
   "scripts": {
     "start": "node src/index.js",
@@ -26,7 +26,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/ashugoyal6799/stacked-pr-sync.git"
+    "url": "git+https://github.com/ashugoyal6799/stacked-pr-sync.git"
   },
   "bugs": {
     "url": "https://github.com/ashugoyal6799/stacked-pr-sync/issues"
