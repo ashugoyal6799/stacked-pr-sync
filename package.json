@@ -1,0 +1,42 @@
+{
+  "name": "stacked-pr-sync",
+  "version": "1.0.0",
+  "description": "A Node.js tool for syncing stacked pull requests with advanced conflict detection and resolution",
+  "main": "src/index.js",
+  "bin": {
+    "stacked-pr-sync": "./bin/stacked-pr-sync.js"
+  },
+  "scripts": {
+    "start": "node src/index.js",
+    "test": "echo \"No tests specified\" && exit 0",
+    "lint": "eslint src/",
+    "format": "prettier --write src/"
+  },
+  "keywords": [
+    "git",
+    "pull-request",
+    "sync",
+    "stacked-pr",
+    "merge",
+    "conflict-detection",
+    "cli",
+    "development-tools"
+  ],
+  "author": "Ashu Goyal",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ashugoyal/stacked-pr-sync.git"
+  },
+  "bugs": {
+    "url": "https://github.com/ashugoyal/stacked-pr-sync/issues"
+  },
+  "homepage": "https://github.com/ashugoyal/stacked-pr-sync#readme",
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "devDependencies": {
+    "eslint": "^8.0.0",
+    "prettier": "^2.8.0"
+  }
+}
