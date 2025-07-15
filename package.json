@@ -26,12 +26,12 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/ashugoyal/stacked-pr-sync.git"
+    "url": "https://github.com/ashugoyal6799/stacked-pr-sync.git"
   },
   "bugs": {
-    "url": "https://github.com/ashugoyal/stacked-pr-sync/issues"
+    "url": "https://github.com/ashugoyal6799/stacked-pr-sync/issues"
   },
-  "homepage": "https://github.com/ashugoyal/stacked-pr-sync#readme",
+  "homepage": "https://github.com/ashugoyal6799/stacked-pr-sync#readme",
   "engines": {
     "node": ">=14.0.0"
   },
