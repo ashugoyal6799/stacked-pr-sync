@@ -8,10 +8,62 @@ const {
   switchToBranch,
   mergeFromBranch,
   hasConflicts,
+  getBranchStatus,
+  getSyncDetails,
 } = require('../utils/git')
 const { logStep, logSuccess, logError, logWarning, logInfo, logCommand } = require('../utils/logger')
 const { loadConfig } = require('../utils/config')
 const { checkAllPotentialConflicts, handlePreDetectedConflicts } = require('./conflict-detector')
+
+// Check all branches and show status report
+function checkBranchStatuses(branches) {
+  logStep('Checking', `Checking branches: ${branches.join(', ')}`)
+  console.log('')
+
+  const branchStatuses = []
+  const outOfSyncBranches = []
+
+  for (const branch of branches) {
+    const status = getBranchStatus(branch)
+    branchStatuses.push(status)
+
+    if (status.syncStatus === 'out-of-sync') {
+      outOfSyncBranches.push(branch)
+    }
+
+    // Display status with details
+    let statusIcon = '❓'
+    let statusText = ''
+
+    if (status.syncStatus === 'in-sync') {
+      statusIcon = '✅'
+      statusText = 'In sync with origin'
+    } else if (status.syncStatus === 'out-of-sync') {
+      statusIcon = '❌'
+      const details = getSyncDetails(branch)
+      if (details.ahead > 0 && details.behind > 0) {
+        statusText = `Out of sync (diverged: ${details.ahead} ahead, ${details.behind} behind)`
+      } else if (details.ahead > 0) {
+        statusText = `Out of sync (local ahead by ${details.ahead} commits)`
+      } else if (details.behind > 0) {
+        statusText = `Out of sync (remote ahead by ${details.behind} commits)`
+      } else {
+        statusText = 'Out of sync'
+      }
+    } else if (status.syncStatus === 'no-remote') {
+      statusIcon = '🏠'
+      statusText = 'No remote branch found'
+    } else if (status.syncStatus === 'not-found') {
+      statusIcon = '❌'
+      statusText = 'Branch not found'
+    }
+
+    logInfo(`${statusIcon} ${branch}: ${statusText}`)
+  }
+
+  console.log('')
+  return { branchStatuses, outOfSyncBranches }
+}
 
 // Get list of branches that are out of sync with origin
 function getOutOfSyncBranches(branches) {
@@ -43,22 +95,24 @@ async function handleOutOfSyncBranches(outOfSyncBranches) {
 
   return new Promise((resolve) => {
     rl.question(
-      '\nOptions:\n1. Sync all branches automatically\n2. Sync branches one by one\n3. Continue without syncing (not recommended)\n4. Abort\n\nEnter your choice (1-4): ',
+      '\nOptions:\n1. Sync all branches automatically\n2. Sync branches one by one\n3. Continue without syncing\n4. Abort\n\nEnter your choice (1-4): ',
       (answer) => {
         rl.close()
 
         switch (answer.trim()) {
           case '1':
+            logInfo('Auto-syncing all branches with origin...')
             syncAllBranches(outOfSyncBranches)
             resolve()
             break
           case '2':
+            logInfo('Syncing branches one by one...')
             syncBranchesOneByOne(outOfSyncBranches)
             resolve()
             break
           case '3':
             logWarning('Continuing without syncing branches...')
-            logInfo('This might cause issues during the merge process.')
+            logInfo('This might cause issues if branches are out of sync.')
             resolve()
             break
           case '4':
@@ -129,100 +183,53 @@ function askToSyncBranch(branchName) {
   })
 }
 
+
 // Interactive conflict resolution
 function handleConflicts(currentBranch, sourceBranch) {
-  logError(`\nMerge conflicts detected when merging from ${sourceBranch} into ${currentBranch}`)
-  logWarning('Please resolve conflicts manually and then choose an option:')
+  logError(`\n❌ Merge conflicts detected when merging from ${sourceBranch} into ${currentBranch}`)
+  logInfo('🛑 Sync aborted due to conflicts.')
+  logInfo('📋 Please resolve conflicts manually and then restart the sync process.')
+  
+  console.log('')
+  logInfo('📋 How to resolve conflicts:')
+  logInfo('1. Open the conflicted files in your editor')
+  logInfo('2. Look for conflict markers: <<<<<<< HEAD, =======, >>>>>>>')
+  logInfo('3. Edit the files to resolve conflicts')
+  logInfo('4. Save the files')
+  logInfo('5. Stage the resolved files: git add <filename>')
+  logInfo('6. Complete the merge: git commit')
+  logInfo('7. Restart the sync: npx stacked-pr-sync master feature1 feature2 feature3')
+  console.log('')
+  
+  logInfo('💡 Current state:')
+  logInfo(`   • You are on branch: ${currentBranch}`)
+  logInfo(`   • Merge from ${sourceBranch} is in progress`)
+  logInfo(`   • Resolve conflicts and complete the merge`)
+  logInfo(`   • Then restart the sync process`)
+  console.log('')
+  
+  logInfo('🚀 To restart after resolving conflicts:')
+  logInfo(`   npx stacked-pr-sync master feature1 feature2 feature3`)
+  console.log('')
 
-  const readline = require('readline')
-  const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout,
-  })
-
-  return new Promise((resolve) => {
-    rl.question(
-      '\nOptions:\n1. Continue after resolving conflicts\n2. Abort merge and stop\n3. Skip this branch and continue with next\n\nEnter your choice (1-3): ',
-      (answer) => {
-        rl.close()
-
-        switch (answer.trim()) {
-          case '1':
-            logInfo('Continuing after conflict resolution...')
-            resolve('continue')
-            break
-          case '2':
-            logInfo('Aborting merge and stopping...')
-            try {
-              execSync('git merge --abort', { stdio: 'inherit' })
-            } catch (error) {
-              // Ignore error if merge was already aborted
-            }
-            resolve('abort')
-            break
-          case '3':
-            logInfo('Skipping this branch and continuing with next...')
-            try {
-              execSync('git merge --abort', { stdio: 'inherit' })
-            } catch (error) {
-              // Ignore error if merge was already aborted
-            }
-            resolve('skip')
-            break
-          default:
-            logError('Invalid choice. Aborting...')
-            resolve('abort')
-        }
-      }
-    )
-  })
+  // Exit the process - user needs to restart
+  process.exit(1)
 }
 
 // Handle uncommitted changes
 async function handleUncommittedChanges() {
-  logWarning('Working directory has uncommitted changes (excluding script files)')
-  logInfo('Please choose an option:')
+  logWarning('Working directory has uncommitted changes')
+  logInfo('Auto-stashing changes to continue...')
 
-  const readline = require('readline')
-  const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout,
-  })
-
-  return new Promise((resolve) => {
-    rl.question(
-      '\nOptions:\n1. Continue anyway (not recommended)\n2. Stash changes and continue\n3. Abort\n\nEnter your choice (1-3): ',
-      (answer) => {
-        rl.close()
-
-        switch (answer.trim()) {
-          case '1':
-            logWarning('Continuing with uncommitted changes...')
-            resolve('continue')
-            break
-          case '2':
-            logInfo('Stashing changes...')
-            try {
-              logCommand('git stash push -m "Auto-stash before PR sync"')
-              execSync('git stash push -m "Auto-stash before PR sync"', { stdio: 'inherit' })
-              logSuccess('Changes stashed successfully')
-              resolve('stashed')
-            } catch (error) {
-              logError('Failed to stash changes')
-              resolve('abort')
-            }
-            break
-          case '3':
-            logInfo('Operation aborted by user.')
-            resolve('abort')
-            break
-          default:
-            logError('Invalid choice. Aborting...')
-            resolve('abort')
-        }
-      }
-    )
-  })
+  try {
+    logCommand('git stash push -m "Auto-stash before PR sync"')
+    execSync('git stash push -m "Auto-stash before PR sync"', { stdio: 'inherit' })
+    logSuccess('Changes stashed successfully')
+    return 'stashed'
+  } catch (error) {
+    logError('Failed to stash changes. Please commit or stash manually and try again.')
+    process.exit(1)
+  }
 }
 
 // Main function to sync stacked PRs
@@ -244,41 +251,29 @@ async function syncStackedPRs(branches) {
   logInfo(`Starting from branch: ${originalBranch}`)
 
   try {
-    const fetchSuccess = fetchLatest()
+    // Step 1: Smart origin detection and status report
+    const { branchStatuses, outOfSyncBranches } = checkBranchStatuses(branches)
 
-    // Step 1: Check if all branches are in sync with origin (only if fetch was successful)
-    if (fetchSuccess) {
-      const outOfSyncBranches = getOutOfSyncBranches(branches)
-      if (outOfSyncBranches.length > 0) {
-        await handleOutOfSyncBranches(outOfSyncBranches)
-      }
+    // Step 2: Handle origin sync if needed
+    if (outOfSyncBranches.length > 0) {
+      await handleOutOfSyncBranches(outOfSyncBranches)
     } else {
-      logWarning('Skipping origin sync check due to fetch failure')
-      logInfo('Continuing with local branch state...')
+      logSuccess('All branches are in sync with origin!')
     }
 
-    // Step 2: Pre-check for potential merge conflicts (unless skipped)
+    // Step 3: Pre-check for potential merge conflicts
     const config = loadConfig()
-    const shouldCheckConflicts = !global.skipConflictCheck && (!config || !config.settings || config.settings.preConflictCheck.enabled)
+    const shouldCheckConflicts = !config || !config.settings || config.settings.preConflictCheck.enabled
 
     if (shouldCheckConflicts) {
       const potentialConflicts = await checkAllPotentialConflicts(branches)
-      const shouldContinue = await handlePreDetectedConflicts(potentialConflicts)
-
-      if (!shouldContinue) {
-        logInfo('Sync aborted due to detected conflicts.')
-        return
-      }
+      await handlePreDetectedConflicts(potentialConflicts)
     } else {
-      if (global.skipConflictCheck) {
-        logWarning('Skipping pre-conflict check (--skip-conflict-check flag used)')
-      } else {
-        logWarning('Skipping pre-conflict check (disabled in config)')
-      }
+      logWarning('Skipping pre-conflict check (disabled in config)')
       logInfo('This may result in conflicts during the sync process.')
     }
 
-    // Step 3: Do everything locally
+    // Step 4: Sync branches locally
     logStep('Syncing', 'Syncing branches locally...')
 
     for (let i = 0; i < branches.length - 1; i++) {
@@ -295,16 +290,8 @@ async function syncStackedPRs(branches) {
 
       if (!mergeSuccess) {
         if (hasConflicts()) {
-          const action = await handleConflicts(nextBranch, currentBranch)
-
-          if (action === 'abort') {
-            logInfo('Operation aborted by user.')
-            break
-          } else if (action === 'skip') {
-            logInfo(`Skipping ${nextBranch}, continuing with next branch...`)
-            continue
-          }
-          // If action is 'continue', user has resolved conflicts manually
+          // Stop immediately on conflicts
+          handleConflicts(nextBranch, currentBranch)
         } else {
           logError(`Failed to merge changes from ${currentBranch} to ${nextBranch}`)
           break
@@ -314,7 +301,7 @@ async function syncStackedPRs(branches) {
 
     logSuccess('\nStacked PR sync completed successfully!')
 
-    // Step 4: Ask user to push changes
+    // Step 5: Ask user to push changes
     await askToPushChanges(branches)
 
     // Return to original branch
@@ -338,6 +325,24 @@ async function syncStackedPRs(branches) {
   } catch (error) {
     logError(`Error during sync: ${error.message}`)
     process.exit(1)
+  }
+}
+
+
+
+// Push all branches at once
+function pushAllBranches(branches) {
+  logStep('Pushing', `Pushing all branches to origin...`)
+
+  for (const branch of branches) {
+    try {
+      logInfo(`Pushing ${branch}...`)
+      logCommand(`git push origin ${branch}`)
+      execSync(`git push origin ${branch}`, { stdio: 'inherit' })
+      logSuccess(`Successfully pushed ${branch}`)
+    } catch (error) {
+      logError(`Failed to push ${branch}`)
+    }
   }
 }
 
@@ -379,22 +384,6 @@ async function askToPushChanges(branches) {
   })
 }
 
-// Push all branches at once
-function pushAllBranches(branches) {
-  logStep('Pushing', `Pushing all branches to origin...`)
-
-  for (const branch of branches) {
-    try {
-      logInfo(`Pushing ${branch}...`)
-      logCommand(`git push origin ${branch}`)
-      execSync(`git push origin ${branch}`, { stdio: 'inherit' })
-      logSuccess(`Successfully pushed ${branch}`)
-    } catch (error) {
-      logError(`Failed to push ${branch}`)
-    }
-  }
-}
-
 // Push branches one by one with user confirmation
 async function pushBranchesOneByOne(branches) {
   for (const branch of branches) {
@@ -430,10 +419,12 @@ function askToPushBranch(branchName) {
   })
 }
 
+
 module.exports = {
   syncStackedPRs,
   getOutOfSyncBranches,
   handleOutOfSyncBranches,
   handleConflicts,
   handleUncommittedChanges,
+  checkBranchStatuses,
 }

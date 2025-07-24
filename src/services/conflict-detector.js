@@ -41,8 +41,8 @@ async function handlePreDetectedConflicts(conflicts) {
     logError(`  ${index + 1}. ${conflict.sourceBranch} → ${conflict.targetBranch}`)
   })
 
-  logWarning('\nYou must resolve these conflicts before proceeding with the sync.')
-  logInfo('Please resolve conflicts in the following order:')
+  logWarning('\nPlease resolve these conflicts before proceeding with the sync.')
+  logInfo('Resolve conflicts in the following order:')
 
   conflicts.forEach((conflict, index) => {
     logInfo(`  ${index + 1}. Switch to ${conflict.targetBranch} and merge ${conflict.sourceBranch}`)
@@ -51,35 +51,8 @@ async function handlePreDetectedConflicts(conflicts) {
     logInfo(`     # Resolve conflicts, then: git add . && git commit`)
   })
 
-  const readline = require('readline')
-  const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout,
-  })
-
-  return new Promise((resolve) => {
-    rl.question(
-      '\nOptions:\n1. Abort and resolve conflicts manually\n2. Continue anyway (not recommended)\n\nEnter your choice (1-2): ',
-      (answer) => {
-        rl.close()
-
-        switch (answer.trim()) {
-          case '1':
-            logInfo('Aborting sync. Please resolve conflicts manually and run the script again.')
-            resolve(false)
-            break
-          case '2':
-            logWarning('Continuing with sync despite detected conflicts...')
-            logInfo('This may cause issues during the merge process.')
-            resolve(true)
-            break
-          default:
-            logError('Invalid choice. Aborting...')
-            resolve(false)
-        }
-      }
-    )
-  })
+  logInfo('\nAfter resolving conflicts, run the sync command again.')
+  process.exit(1)
 }
 
 module.exports = {

@@ -1,0 +1,27 @@
+{
+  "stacks": {
+    "feature-stack": {
+      "description": "Example feature stack",
+      "branches": ["master", "feature-base", "feature-ui", "feature-api"]
+    },
+    "auth-stack": {
+      "description": "Authentication feature stack", 
+      "branches": ["main", "auth-base", "user-auth", "admin-auth"]
+    },
+    "my-project": {
+      "description": "My current project stack",
+      "branches": ["master", "feature1", "feature2", "feature3"]
+    }
+  },
+  "defaultStack": "my-project",
+  "settings": {
+    "preConflictCheck": {
+      "enabled": true,
+      "description": "Check for conflicts before starting sync"
+    },
+    "autoPush": {
+      "enabled": false,
+      "description": "Automatically push changes after sync"
+    }
+  }
+} 

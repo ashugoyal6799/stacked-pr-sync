@@ -10,7 +10,8 @@
     "start": "node src/index.js",
     "test": "echo \"No tests specified\" && exit 0",
     "lint": "eslint src/",
-    "format": "prettier --write src/"
+    "format": "prettier --write src/",
+    "sync": "node bin/stacked-pr-sync.js"
   },
   "keywords": [
     "git",

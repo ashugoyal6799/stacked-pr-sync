@@ -2,37 +2,31 @@ const { showConfig, listStacks, loadConfig } = require('./config')
 
 // Show help information
 function showHelp() {
-  console.log('Stacked PR Sync Tool')
-  console.log('===================')
+  console.log('🚀 Stacked PR Sync Tool')
+  console.log('=======================')
   console.log('')
-  console.log('Usage:')
-  console.log('  node stacked-pr-sync.js <branch1> <branch2> <branch3> ...')
-  console.log('  node stacked-pr-sync.js <stack-name>')
-  console.log('  node stacked-pr-sync.js (uses default stack from config)')
+  console.log('Simple usage:')
+  console.log('  npx stacked-pr-sync master feature1 feature2 feature3')
+  console.log('  npm run sync master feature1 feature2 feature3')
   console.log('')
   console.log('Examples:')
-  console.log('  node stacked-pr-sync.js master feature-1 feature-2 feature-3')
-  console.log('  node stacked-pr-sync.js feature-stack')
-  console.log('  node stacked-pr-sync.js')
+  console.log('  # Sync branches: master → feature1 → feature2 → feature3')
+  console.log('  npx stacked-pr-sync master feature1 feature2 feature3')
+  console.log('')
+  console.log('  # If you have a config file with predefined stacks')
+  console.log('  npx stacked-pr-sync my-stack')
+  console.log('  npx stacked-pr-sync  # uses default stack')
   console.log('')
   console.log('Options:')
   console.log('  --help, -h              Show this help message')
-  console.log('  --list, -l              List available stacks from config')
-  console.log('  --config, -c            Show detailed configuration')
-  console.log('  --skip-conflict-check, -s  Skip pre-conflict detection (use old behavior)')
   console.log('')
-  console.log('Configuration:')
-  console.log('  Create scripts/stacked-pr-config.json to define your stacks')
-  console.log('  Example config:')
-  console.log('  {')
-  console.log('    "stacks": {')
-  console.log('      "my-stack": {')
-  console.log('        "description": "My feature stack",')
-  console.log('        "branches": ["master", "feature-1", "feature-2"]')
-  console.log('      }')
-  console.log('    },')
-  console.log('    "defaultStack": "my-stack"')
-  console.log('  }')
+  console.log('Quick Start:')
+  console.log('  1. Install: npm install stacked-pr-sync')
+  console.log('  2. Run: npx stacked-pr-sync master feature1 feature2')
+  console.log('  3. That\'s it! 🎉')
+  console.log('')
+  console.log('Configuration (optional):')
+  console.log('  Create stacked-pr-config.json to define reusable stacks')
 }
 
 // Parse command line arguments
@@ -45,58 +39,46 @@ function parseArguments() {
     process.exit(0)
   }
 
-  // Check for list flag
-  if (args.includes('--list') || args.includes('-l')) {
-    listStacks()
-    process.exit(0)
-  }
+  const filteredArgs = args.filter((arg) => !['--help', '-h'].includes(arg))
 
-  // Check for config flag
-  if (args.includes('--config') || args.includes('-c')) {
-    showConfig()
-    process.exit(0)
-  }
-
-  // Check for skip-conflict-check flag
-  const skipConflictCheck = args.includes('--skip-conflict-check') || args.includes('-s')
-  const filteredArgs = args.filter((arg) => !['--skip-conflict-check', '-s', '--config', '-c'].includes(arg))
-
-  // Store the flag in a global variable or pass it through
-  global.skipConflictCheck = skipConflictCheck
-
-  // Check for stack name
-  if (filteredArgs.length === 1 && !filteredArgs[0].startsWith('-')) {
-    const config = loadConfig()
-    if (config && config.stacks[filteredArgs[0]]) {
-      return config.stacks[filteredArgs[0]].branches
-    } else {
-      console.error(`Stack '${filteredArgs[0]}' not found in config`)
-      if (config) {
-        console.log('Available stacks:')
-        Object.keys(config.stacks).forEach((stack) => {
-          console.log(`  - ${stack}: ${config.stacks[stack].description}`)
-        })
-      }
-      process.exit(1)
-    }
-  }
-
-  // Use command line arguments as branches
+  // If no arguments provided, try to use default stack
   if (filteredArgs.length === 0) {
     const config = loadConfig()
     if (config && config.defaultStack && config.stacks[config.defaultStack]) {
-      console.log(`Using default stack: ${config.defaultStack}`)
+      console.log(`📋 Using default stack: ${config.defaultStack}`)
       return config.stacks[config.defaultStack].branches
     } else {
+      console.log('❌ No branches specified and no default stack found.')
+      console.log('')
+      console.log('Usage examples:')
+      console.log('  npx stacked-pr-sync master feature1 feature2 feature3')
+      console.log('  npm run sync master feature1 feature2 feature3')
+      console.log('')
+      console.log('Or create a config file with predefined stacks.')
       showHelp()
       process.exit(1)
     }
   }
 
+  // Check if first argument is a stack name
+  if (filteredArgs.length === 1 && !filteredArgs[0].startsWith('-')) {
+    const config = loadConfig()
+    if (config && config.stacks[filteredArgs[0]]) {
+      console.log(`📋 Using stack: ${filteredArgs[0]}`)
+      return config.stacks[filteredArgs[0]].branches
+    } else {
+      // If not a stack name, treat as branch list
+      console.log(`📋 Using branches: ${filteredArgs.join(' → ')}`)
+      return filteredArgs
+    }
+  }
+
+  // Use command line arguments as branches
+  console.log(`📋 Using branches: ${filteredArgs.join(' → ')}`)
   return filteredArgs
 }
 
 module.exports = {
-  showHelp,
   parseArguments,
+  showHelp
 }

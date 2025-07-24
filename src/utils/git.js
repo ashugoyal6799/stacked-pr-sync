@@ -45,6 +45,15 @@ function isWorkingDirectoryClean() {
 // Fetch latest changes from remote
 function fetchLatest() {
   try {
+    // First check if origin remote exists
+    try {
+      execSync('git remote get-url origin', { stdio: 'ignore' })
+    } catch (error) {
+      logWarning('No origin remote found. Skipping fetch.')
+      logInfo('This repository appears to be local-only.')
+      return false
+    }
+
     logStep('Fetching', 'Fetching latest changes from remote...')
     logCommand('git fetch origin')
     execSync('git fetch origin', { stdio: 'inherit' })
@@ -52,7 +61,7 @@ function fetchLatest() {
     return true
   } catch (error) {
     logWarning('Fetch failed, but continuing with local branches...')
-    logInfo('This might be due to network issues or authentication problems.')
+    logInfo('This might be due to network issues, authentication problems, or no remote access.')
     logInfo('The script will continue with your local branch state.')
     return false
   }
@@ -171,6 +180,69 @@ function performDryRunMerge(sourceBranch, targetBranch) {
   }
 }
 
+// Check branch status for smart origin detection
+function getBranchStatus(branchName) {
+  try {
+    // Check if branch exists locally
+    const localExists = execSync(`git show-ref --verify --quiet refs/heads/${branchName}`, { stdio: 'ignore' })
+    
+    // Check if remote branch exists
+    let remoteExists = false
+    let isInSync = false
+    let syncStatus = 'unknown'
+    
+    try {
+      execSync(`git rev-parse origin/${branchName}`, { stdio: 'ignore' })
+      remoteExists = true
+      
+      // Compare local and remote commits
+      const localCommit = execSync(`git rev-parse ${branchName}`, { encoding: 'utf8' }).trim()
+      const remoteCommit = execSync(`git rev-parse origin/${branchName}`, { encoding: 'utf8' }).trim()
+      
+      isInSync = localCommit === remoteCommit
+      syncStatus = isInSync ? 'in-sync' : 'out-of-sync'
+    } catch (error) {
+      remoteExists = false
+      syncStatus = 'no-remote'
+    }
+    
+    return {
+      branch: branchName,
+      localExists: true,
+      remoteExists,
+      isInSync,
+      syncStatus
+    }
+  } catch (error) {
+    return {
+      branch: branchName,
+      localExists: false,
+      remoteExists: false,
+      isInSync: false,
+      syncStatus: 'not-found'
+    }
+  }
+}
+
+// Get detailed sync information for a branch
+function getSyncDetails(branchName) {
+  try {
+    const localCommit = execSync(`git rev-parse ${branchName}`, { encoding: 'utf8' }).trim()
+    const remoteCommit = execSync(`git rev-parse origin/${branchName}`, { encoding: 'utf8' }).trim()
+    
+    // Count commits ahead/behind
+    const ahead = execSync(`git rev-list --count origin/${branchName}..${branchName}`, { encoding: 'utf8' }).trim()
+    const behind = execSync(`git rev-list --count ${branchName}..origin/${branchName}`, { encoding: 'utf8' }).trim()
+    
+    return {
+      ahead: parseInt(ahead),
+      behind: parseInt(behind)
+    }
+  } catch (error) {
+    return { ahead: 0, behind: 0 }
+  }
+}
+
 module.exports = {
   checkGitRepo,
   getCurrentBranch,
@@ -181,4 +253,6 @@ module.exports = {
   mergeFromBranch,
   hasConflicts,
   performDryRunMerge,
+  getBranchStatus,
+  getSyncDetails,
 }
