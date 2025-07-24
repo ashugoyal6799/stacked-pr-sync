@@ -1,6 +1,6 @@
 {
   "name": "stacked-pr-sync",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "A Node.js tool for syncing stacked pull requests with advanced conflict detection and resolution",
   "main": "src/index.js",
   "bin": {
