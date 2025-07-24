@@ -256,16 +256,16 @@ async function syncStackedPRs(branches) {
     const { branchStatuses, outOfSyncBranches } = checkBranchStatuses(branches)
 
     // Step 2: Handle origin sync if needed
-    const hasOrigin = checkOriginExists()
+    const originExists = checkOriginExists()
     
     if (outOfSyncBranches.length > 0) {
-      if (hasOrigin) {
+      if (originExists) {
         await handleOutOfSyncBranches(outOfSyncBranches)
       } else {
         logInfo('No origin remote found. Continuing with local branches only.')
       }
     } else {
-      if (hasOrigin) {
+      if (originExists) {
         logSuccess('All branches are in sync with origin!')
       } else {
         logInfo('No origin remote found. Working with local branches only.')
@@ -313,8 +313,8 @@ async function syncStackedPRs(branches) {
     logSuccess('\nStacked PR sync completed successfully!')
 
     // Step 5: Ask user to push changes (only if origin exists)
-    const hasOrigin = checkOriginExists()
-    if (hasOrigin) {
+    const pushOriginExists = checkOriginExists()
+    if (pushOriginExists) {
       await askToPushChanges(branches)
     } else {
       logInfo('No origin remote found. Skipping push options.')
