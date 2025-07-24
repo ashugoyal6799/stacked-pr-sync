@@ -10,6 +10,7 @@ const {
   hasConflicts,
   getBranchStatus,
   getSyncDetails,
+  checkOriginExists,
 } = require('../utils/git')
 const { logStep, logSuccess, logError, logWarning, logInfo, logCommand } = require('../utils/logger')
 const { loadConfig } = require('../utils/config')
@@ -255,10 +256,20 @@ async function syncStackedPRs(branches) {
     const { branchStatuses, outOfSyncBranches } = checkBranchStatuses(branches)
 
     // Step 2: Handle origin sync if needed
+    const hasOrigin = checkOriginExists()
+    
     if (outOfSyncBranches.length > 0) {
-      await handleOutOfSyncBranches(outOfSyncBranches)
+      if (hasOrigin) {
+        await handleOutOfSyncBranches(outOfSyncBranches)
+      } else {
+        logInfo('No origin remote found. Continuing with local branches only.')
+      }
     } else {
-      logSuccess('All branches are in sync with origin!')
+      if (hasOrigin) {
+        logSuccess('All branches are in sync with origin!')
+      } else {
+        logInfo('No origin remote found. Working with local branches only.')
+      }
     }
 
     // Step 3: Pre-check for potential merge conflicts
@@ -301,8 +312,13 @@ async function syncStackedPRs(branches) {
 
     logSuccess('\nStacked PR sync completed successfully!')
 
-    // Step 5: Ask user to push changes
-    await askToPushChanges(branches)
+    // Step 5: Ask user to push changes (only if origin exists)
+    const hasOrigin = checkOriginExists()
+    if (hasOrigin) {
+      await askToPushChanges(branches)
+    } else {
+      logInfo('No origin remote found. Skipping push options.')
+    }
 
     // Return to original branch
     if (originalBranch !== getCurrentBranch()) {

@@ -42,13 +42,21 @@ function isWorkingDirectoryClean() {
   }
 }
 
+// Check if origin remote exists
+function checkOriginExists() {
+  try {
+    execSync('git remote get-url origin', { stdio: 'ignore' })
+    return true
+  } catch (error) {
+    return false
+  }
+}
+
 // Fetch latest changes from remote
 function fetchLatest() {
   try {
     // First check if origin remote exists
-    try {
-      execSync('git remote get-url origin', { stdio: 'ignore' })
-    } catch (error) {
+    if (!checkOriginExists()) {
       logWarning('No origin remote found. Skipping fetch.')
       logInfo('This repository appears to be local-only.')
       return false
@@ -255,4 +263,5 @@ module.exports = {
   performDryRunMerge,
   getBranchStatus,
   getSyncDetails,
+  checkOriginExists,
 }
