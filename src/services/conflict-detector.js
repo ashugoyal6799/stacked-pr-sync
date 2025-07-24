@@ -1,5 +1,5 @@
 const { performDryRunMerge } = require('../utils/git')
-const { logStep, logSuccess, logError, logInfo } = require('../utils/logger')
+const { logStep, logSuccess, logError, logWarning, logInfo } = require('../utils/logger')
 
 // Check all potential merge conflicts before starting sync
 async function checkAllPotentialConflicts(branches) {
