@@ -7,7 +7,7 @@ const { logInfo, logSuccess, logError } = require('../src/utils/logger')
 // Main execution
 if (require.main === module) {
   try {
-    const branches = parseArguments()
+  const branches = parseArguments()
 
     console.log('')
     logInfo('🚀 Starting Stacked PR Sync')
@@ -15,8 +15,8 @@ if (require.main === module) {
     logInfo(`📋 Branch sequence: ${branches.join(' → ')}`)
     console.log('')
 
-    syncStackedPRs(branches)
-      .then(() => {
+  syncStackedPRs(branches)
+    .then(() => {
         console.log('')
         logSuccess('✅ Stacked PR sync completed successfully!')
         console.log('')
@@ -25,8 +25,8 @@ if (require.main === module) {
         logInfo('   • Push branches if needed: git push origin <branch>')
         logInfo('   • Create/update pull requests')
         console.log('')
-      })
-      .catch((error) => {
+    })
+    .catch((error) => {
         console.log('')
         logError(`❌ Sync failed: ${error.message}`)
         console.log('')
@@ -35,8 +35,8 @@ if (require.main === module) {
         logInfo('   • Ensure working directory is clean')
         logInfo('   • Resolve any merge conflicts manually')
         console.log('')
-        process.exit(1)
-      })
+      process.exit(1)
+    })
   } catch (error) {
     logError(`❌ Error: ${error.message}`)
     process.exit(1)

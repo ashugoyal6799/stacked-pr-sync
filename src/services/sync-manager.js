@@ -222,15 +222,15 @@ async function handleUncommittedChanges() {
   logWarning('Working directory has uncommitted changes')
   logInfo('Auto-stashing changes to continue...')
 
-  try {
-    logCommand('git stash push -m "Auto-stash before PR sync"')
-    execSync('git stash push -m "Auto-stash before PR sync"', { stdio: 'inherit' })
-    logSuccess('Changes stashed successfully')
+            try {
+              logCommand('git stash push -m "Auto-stash before PR sync"')
+              execSync('git stash push -m "Auto-stash before PR sync"', { stdio: 'inherit' })
+              logSuccess('Changes stashed successfully')
     return 'stashed'
-  } catch (error) {
+            } catch (error) {
     logError('Failed to stash changes. Please commit or stash manually and try again.')
     process.exit(1)
-  }
+        }
 }
 
 // Main function to sync stacked PRs
@@ -258,7 +258,7 @@ async function syncStackedPRs(branches) {
     // Step 2: Handle origin sync if needed
     const originExists = checkOriginExists()
     
-    if (outOfSyncBranches.length > 0) {
+      if (outOfSyncBranches.length > 0) {
       if (originExists) {
         await handleOutOfSyncBranches(outOfSyncBranches)
       } else {
@@ -279,8 +279,8 @@ async function syncStackedPRs(branches) {
     if (shouldCheckConflicts) {
       const potentialConflicts = await checkAllPotentialConflicts(branches)
       await handlePreDetectedConflicts(potentialConflicts)
-    } else {
-      logWarning('Skipping pre-conflict check (disabled in config)')
+      } else {
+        logWarning('Skipping pre-conflict check (disabled in config)')
       logInfo('This may result in conflicts during the sync process.')
     }
 
@@ -315,7 +315,7 @@ async function syncStackedPRs(branches) {
     // Step 5: Ask user to push changes (only if origin exists)
     const pushOriginExists = checkOriginExists()
     if (pushOriginExists) {
-      await askToPushChanges(branches)
+    await askToPushChanges(branches)
     } else {
       logInfo('No origin remote found. Skipping push options.')
     }

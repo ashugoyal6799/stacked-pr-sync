@@ -5,14 +5,50 @@ A simple tool to sync stacked pull requests with smart conflict detection.
 ## 🚀 Quick Start
 
 ```bash
-# Install
-npm install stacked-pr-sync
-
-# Use
+# Use directly (no installation needed)
 npx stacked-pr-sync master feature1 feature2 feature3
 ```
 
 That's it! 🎉
+
+## 📦 Installation Options
+
+### **Option 1: Use with npx (Recommended)**
+```bash
+# No installation needed - works from anywhere
+npx stacked-pr-sync master feature1 feature2 feature3
+```
+
+### **Option 2: Install as Dev Dependency**
+```bash
+# Install in your project
+npm install --save-dev stacked-pr-sync
+
+# Use with npx (automatically uses local version)
+npx stacked-pr-sync master feature1 feature2 feature3
+
+# Or add to package.json scripts
+{
+  "scripts": {
+    "sync": "stacked-pr-sync",
+    "sync:feature": "stacked-pr-sync master feature1 feature2 feature3"
+  }
+}
+
+# Then run
+npm run sync master feature1 feature2 feature3
+# OR
+npm run sync:feature
+```
+
+### **Option 3: Global Install**
+```bash
+# Install globally
+npm install -g stacked-pr-sync
+
+# Use directly
+stacked-pr-sync master feature1 feature2 feature3
+```
 
 ## 📋 How It Works
 
